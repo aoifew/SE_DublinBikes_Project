@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head> 
+<meta charset="UTF-8">
+<link rel = "stylesheet" type = "text/css" href="{{ url_for('static', filename='css/style.css') }}">
+<!--JQuery-->    
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>   
+<title>DublinBikes</title>    
+</head>   
+<header>
+    <h1>Dublin Bikes</h1> <img src="{{ url_for('static', filename='bike.png') }}" height="80px">
+</header>
+    
+    
+<body>
+<script>
+//Initialise Map Function
+function initialize() {
+var xmlhttp = new XMLHttpRequest();
+var url = "http://127.0.0.1:5000/json"
+
+//Query JSON results from FLask app
+xmlhttp.onreadystatechange=function(){
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+        parseResponse(xmlhttp.responseText); 
+            }
+        }
+xmlhttp.open("GET", url, true);
+xmlhttp.send();
+        
+//Parse JSON Results
+function parseResponse(response){
+    stations = JSON.parse(response);
+    
+
+  //Google Map
+  var mapProp = {
+    center:new google.maps.LatLng(53.3464, -6.2691),
+    zoom:14,
+    mapTypeId:google.maps.MapTypeId.ROADMAP
+  };
+  var map=new google.maps.Map(document.getElementById("map"),mapProp);
+
+
+var infowindow = new google.maps.InfoWindow();
+var marker;
+var i;
+
+//Add stations to Map
+for(i = 0; i<stations.results.length; i++){
+    var bikeradius;
+    var bikecolour;
+    var peroccupancy = (stations.results[i].available_bikes / stations.results[i].bike_stands)*100;
+    
+    //Check occupancy
+    //Stations with available bikes receive green, dynamic sized marker
+    //Stations with no available bikes receive red, static sized marker
+    if (peroccupancy == 0){ 
+        bikeradius = 100
+        bikecolour = "#FF0000"}
+    
+    else{   
+     bikeradius = peroccupancy*2
+     bikecolour = "#00FF00"}
+    
+    
+    //Add a circle marker for each station
+    marker = new google.maps.Circle({
+        center: new google.maps.LatLng(stations.results[i].position_lat, stations.results[i].position_long),
+        radius:bikeradius, //Link to number of bikes free
+        strokeColor:bikecolour, //Link to available bikes
+        strokeOpacity:0.8,
+        strokeWeight:2,
+        fillColor:bikecolour, //as above
+        fillOpacity:0.4,
+        clickable: true,
+        map: map
+    });
+    //Add Information to infoboxes
+    google.maps.event.addListener(marker, 'click', (function(marker, i){
+        return function(){
+            infowindow.setPosition(marker.getCenter());
+
+            infowindow.setContent(stations.results[i].name + "<br><br> Available bikes: " +  stations.results[i].available_bikes + "<br> Available bike stands: " + stations.results[i].available_bike_stands + "<br> Number of bike stands: " + stations.results[i].bike_stands + "<br><br> Status: " + stations.results[i].status );    //Info Boxes Content - Add statistics here
+            infowindow.open(map, marker);
+        }
+    })(marker,i));
+}
+//Dropdown menu
+$(document).ready(function(){
+var stationList = "<option></option>";
+for (var i=0; i < stations.results.length; i++){
+    name = stations.results[i].name.replace("'", "");
+    name = name.replace("/", "");
+    stationList += "<option value='" + name + "'>" + stations.results[i].name + "</option>";
+}
+
+$("select").html(stationList);
+});
+}}
+
+//Load Map Script
+function loadScript(){
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+      'callback=initialize';
+  document.body.appendChild(script);
+}
+window.onload = loadScript;
+
+</script>
+
+<!--GOOGLE MAP-->
+
+<div id="map"></div>
+
+<div id="stats">
+<div id="graphs">
+Select a station below for more information
+<select id = "graph">
+  
+</select>
+</div>
+
+<script>
+//Display image from dropdown menu
+$('#graph').change(function(){ //if the select value gets changed
+   var imageSource = $(this).val(); //get the selected value
+   if(imageSource && imageSource != ""){ //if it has data
+      $('#image-location').html("<b>Daily Occupancy Statistics</b><br>Average Fraction Available Bikes per day<br><img src='/static/"+imageSource+"_bar.png'>"); // insert image in div image-location
+      $('#lineimage-location').html("<b>Hourly Occupancy Statistics</b><br>Average Fraction Available Bikes per hour per day<br><img src='/static/"+imageSource+"_line.png'>");
+   } else {
+      $('#image-location').html(''); //remove content from div image-location, thus removing the image
+      $('#lineimage-location').html('');
+   }
+})
+
+</script>
+<div id = "image-location"></div>
+    
+<div id = 'lineimage-location'></div></div>
+</body>
+    
+<footer>
+    <p>Aoife Whelan, Elayne Ruane and Eoin Scanlon
+        <br>COMP30670 Project<br>With DublinBikes, JCDecaux and GoogleMaps</p>
+</footer>  
+</html>
