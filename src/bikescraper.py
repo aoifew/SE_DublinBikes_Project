@@ -10,7 +10,7 @@ import json
 
 
 #JCDecaux URL with API Key
-JC_URL = "https://api.jcdecaux.com/vls/v1/stations?contract=Dublin&apiKey=734d41507f01569b257148e24bfbfcbd67de0876"
+JC_URL = #####
 
 sampletime = 300 #5 minutes between samples
 
